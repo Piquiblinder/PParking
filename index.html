@@ -48,6 +48,8 @@
     </div>
 
     <script>
+        let timerNotificacion = null; // Variable para controlar el timer
+
         function actualizarPantalla() {
             const data = JSON.parse(localStorage.getItem('miCoche'));
             const res = document.getElementById('resultado');
@@ -72,9 +74,28 @@
             }
         }
 
+        function programarAviso(minutos) {
+            // Limpiamos avisos previos si existen
+            if (timerNotificacion) clearTimeout(timerNotificacion);
+
+            if (minutos > 5) {
+                const tiempoParaAviso = (minutos - 5) * 60000;
+                
+                if (Notification.permission !== 'granted') Notification.requestPermission();
+
+                timerNotificacion = setTimeout(() => {
+                    if (Notification.permission === 'granted') {
+                        new Notification("PParking", {
+                            body: "Tu zona azul termina en 5 minutos. ¡Muévete!",
+                            icon: 'https://cdn-icons-png.flaticon.com/512/3203/3203926.png'
+                        });
+                    }
+                }, tiempoParaAviso);
+            }
+        }
+
         function ejecutarGuardado(esInterior) {
             document.getElementById('modal').style.display = 'none';
-            
             const min = prompt("Minutos de zona azul (0 si no aplica):");
             if (min === null) return; 
 
@@ -82,15 +103,18 @@
             if (nota === null) return;
 
             navigator.geolocation.getCurrentPosition((pos) => {
+                const minutos = parseInt(min);
                 const datos = {
                     lat: pos.coords.latitude, 
                     lon: pos.coords.longitude,
                     nota: nota,
-                    finZonaAzul: parseInt(min) > 0 ? new Date(new Date().getTime() + parseInt(min)*60000).toISOString() : null
+                    finZonaAzul: minutos > 0 ? new Date(new Date().getTime() + minutos*60000).toISOString() : null
                 };
                 localStorage.setItem('miCoche', JSON.stringify(datos));
+                
+                if (minutos > 0) programarAviso(minutos);
                 actualizarPantalla();
-            }, (err) => alert("Error obteniendo ubicación: " + err.message));
+            }, (err) => alert("Error de ubicación: " + err.message));
         }
 
         document.getElementById('btnGuardar').onclick = () => document.getElementById('modal').style.display = 'flex';
@@ -100,15 +124,19 @@
 
         document.getElementById('btnNavegar').onclick = () => {
             const d = JSON.parse(localStorage.getItem('miCoche'));
-            // URL corregida para abrir Google Maps
             window.open(`https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}`, '_blank');
         };
 
         document.getElementById('btnAmpliar').onclick = () => {
             const d = JSON.parse(localStorage.getItem('miCoche'));
             const baseTime = d.finZonaAzul ? new Date(d.finZonaAzul).getTime() : new Date().getTime();
-            d.finZonaAzul = new Date(baseTime + 15 * 60000).toISOString();
+            const nuevosMinutos = 15;
+            d.finZonaAzul = new Date(baseTime + nuevosMinutos * 60000).toISOString();
             localStorage.setItem('miCoche', JSON.stringify(d));
+            
+            // Re-programar aviso con el nuevo tiempo restante
+            const faltan = Math.round((new Date(d.finZonaAzul).getTime() - new Date().getTime()) / 60000);
+            programarAviso(faltan);
             actualizarPantalla();
         };
 
@@ -116,12 +144,14 @@
             const d = JSON.parse(localStorage.getItem('miCoche'));
             d.finZonaAzul = null;
             localStorage.setItem('miCoche', JSON.stringify(d));
+            if (timerNotificacion) clearTimeout(timerNotificacion);
             actualizarPantalla();
         };
 
         document.getElementById('btnBorrar').onclick = () => {
             if (confirm("¿Borrar todo el aparcamiento?")) {
                 localStorage.removeItem('miCoche');
+                if (timerNotificacion) clearTimeout(timerNotificacion);
                 actualizarPantalla();
             }
         };
