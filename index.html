@@ -71,7 +71,7 @@
             }
         }
 
-        // Flujo corregido: Preguntar primero tiempo, luego nota
+        // Flujo: Pregunta minutos -> Pregunta Ubicación
         function ejecutarGuardado(esInterior) {
             document.getElementById('modal').style.display = 'none';
             
@@ -100,7 +100,7 @@
 
         document.getElementById('btnNavegar').onclick = () => {
             const d = JSON.parse(localStorage.getItem('miCoche'));
-            // URL corregida para Google Maps
+            // URL estándar Google Maps
             window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lon}`;
         };
 
@@ -126,11 +126,16 @@
             }
         };
 
-        // Registro del Service Worker
+        // Registro del Service Worker y Permiso de Notificaciones
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registrado'))
+                    .then(reg => {
+                        console.log('SW registrado');
+                        if (Notification.permission !== 'granted') {
+                            Notification.requestPermission();
+                        }
+                    })
                     .catch(err => console.log('Error:', err));
             });
         }
