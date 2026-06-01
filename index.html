@@ -6,79 +6,92 @@
     <title>Asistente Parking</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            padding: 20px; text-align: center; background-color: #f4f4f9; 
+        :root { --bg: #f4f4f9; --text: #333; --card: white; }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #121212; --text: #f0f0f0; --card: #1e1e1e; }
         }
-        button { 
-            display: block; width: 90%; margin: 15px auto; padding: 20px; 
-            font-size: 18px; border-radius: 12px; border: none; font-weight: bold; color: white;
-        }
+        body { font-family: -apple-system, sans-serif; padding: 20px; text-align: center; background-color: var(--bg); color: var(--text); }
+        h1 { margin-bottom: 20px; }
+        button { display: block; width: 90%; margin: 12px auto; padding: 18px; border-radius: 12px; border: none; font-weight: bold; color: white; font-size: 16px; }
         #btnGuardar { background-color: #007bff; }
         #btnBorrar { background-color: #dc3545; }
-        #btnNavegar { background-color: #28a745; }
-        #resultado { 
-            margin-top: 20px; padding: 15px; background: white; 
-            border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
-        }
+        #btnAmpliar { background-color: #ff9800; }
+        #btnFinAzul { background-color: #6c757d; }
+        #resultado { margin-top: 20px; padding: 15px; background: var(--card); border-radius: 10px; }
     </style>
 </head>
 <body>
     <h1>Mi Coche</h1>
     <button id="btnGuardar">Guardar Ubicación</button>
-    <button id="btnNavegar" style="display: none;">¿Cómo llegar al coche?</button>
-    <button id="btnBorrar" style="display: none;">Borrar Aparcamiento</button>
+    <div id="controlesAzul" style="display: none;">
+        <button id="btnAmpliar">+15 min Zona Azul</button>
+        <button id="btnFinAzul">Finalizar Zona Azul</button>
+    </div>
+    <button id="btnBorrar" style="display: none;">Borrar Todo el Aparcamiento</button>
     <div id="resultado"></div>
 
     <script>
         function actualizarPantalla() {
             const data = JSON.parse(localStorage.getItem('miCoche'));
-            const btnGuardar = document.getElementById('btnGuardar');
-            const btnBorrar = document.getElementById('btnBorrar');
-            const btnNavegar = document.getElementById('btnNavegar');
             const res = document.getElementById('resultado');
-
+            const controles = document.getElementById('controlesAzul');
+            
             if (data) {
-                btnGuardar.style.display = 'none';
-                btnBorrar.style.display = 'block';
-                btnNavegar.style.display = 'block';
+                document.getElementById('btnGuardar').style.display = 'none';
+                document.getElementById('btnBorrar').style.display = 'block';
+                controles.style.display = 'block';
                 
-                // Configurar el botón de navegación
-                btnNavegar.onclick = () => {
-                    window.location.href = `https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lon}`;
-                };
-
-                res.innerHTML = `<h3>Ubicación guardada:</h3><p>${data.nota || 'Coordenadas GPS guardadas'}</p>`;
+                let info = `<p><strong>Ubicación:</strong> ${data.nota}</p>`;
+                if (data.finZonaAzul) {
+                    const faltan = Math.round((new Date(data.finZonaAzul).getTime() - new Date().getTime()) / 60000);
+                    info += faltan > 0 ? `<p><strong>Zona Azul:</strong> Faltan ${faltan} min</p>` : `<p style="color:red;">¡Tiempo agotado!</p>`;
+                }
+                res.innerHTML = info;
             } else {
-                btnGuardar.style.display = 'block';
-                btnBorrar.style.display = 'none';
-                btnNavegar.style.display = 'none';
+                document.getElementById('btnGuardar').style.display = 'block';
+                document.getElementById('btnBorrar').style.display = 'none';
+                controles.style.display = 'none';
                 res.innerHTML = '<p>No hay aparcamiento guardado.</p>';
             }
         }
 
         document.getElementById('btnGuardar').addEventListener('click', () => {
-            const esInterior = confirm("¿Estás en un parking interior?");
-            let nota = "";
-            if (esInterior) {
-                nota = prompt("Introduce planta y plaza (Ej: Planta -2, Plaza B14):");
-            }
+            const min = prompt("Minutos zona azul (0 si no aplica):");
+            const esInterior = confirm("¿Parking interior?");
+            const nota = esInterior ? prompt("Introduce planta y plaza (Ej: Planta -2, Plaza B14):") : "Aparcado en exterior";
             
-            navigator.geolocation.getCurrentPosition((pos) => {
-                const datos = { lat: pos.coords.latitude, lon: pos.coords.longitude, nota: nota };
-                localStorage.setItem('miCoche', JSON.stringify(datos));
+            const datos = {
+                nota: nota,
+                finZonaAzul: min > 0 ? new Date(new Date().getTime() + min*60000) : null
+            };
+            localStorage.setItem('miCoche', JSON.stringify(datos));
+            actualizarPantalla();
+        });
+
+        document.getElementById('btnAmpliar').addEventListener('click', () => {
+            const data = JSON.parse(localStorage.getItem('miCoche'));
+            if (data && data.finZonaAzul) {
+                data.finZonaAzul = new Date(new Date(data.finZonaAzul).getTime() + 15 * 60000);
+                localStorage.setItem('miCoche', JSON.stringify(data));
                 actualizarPantalla();
-                alert("¡Ubicación guardada!");
-            }, (error) => { alert("Error: Asegúrate de tener la ubicación activada."); });
+            }
+        });
+
+        document.getElementById('btnFinAzul').addEventListener('click', () => {
+            const data = JSON.parse(localStorage.getItem('miCoche'));
+            data.finZonaAzul = null;
+            localStorage.setItem('miCoche', JSON.stringify(data));
+            actualizarPantalla();
         });
 
         document.getElementById('btnBorrar').addEventListener('click', () => {
-            if (confirm("¿Borrar aparcamiento?")) {
+            if (confirm("¿Borrar todo?")) {
                 localStorage.removeItem('miCoche');
                 actualizarPantalla();
             }
         });
 
+        setInterval(actualizarPantalla, 60000);
         actualizarPantalla();
     </script>
 </body>
