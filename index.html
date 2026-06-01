@@ -30,7 +30,7 @@
             const esInterior = confirm("¿Estás en un parking interior?");
             let nota = "";
             if (esInterior) {
-                nota = prompt("Introduce planta y plaza:");
+                nota = prompt("Introduce planta y plaza (Ejemplo: Planta -2, Plaza B14):");
             }
             
             navigator.geolocation.getCurrentPosition((pos) => {
