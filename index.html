@@ -6,23 +6,24 @@
     <title>PParking</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        :root { --bg: #f4f4f9; --text: #333; --card: white; }
+        :root { --bg: #f4f4f9; --text: #333; --card: white; --primary: #007bff; }
         @media (prefers-color-scheme: dark) { :root { --bg: #121212; --text: #f0f0f0; --card: #1e1e1e; } }
         body { font-family: -apple-system, sans-serif; padding: 20px; text-align: center; background-color: var(--bg); color: var(--text); }
-        button { display: block; width: 90%; margin: 12px auto; padding: 18px; border-radius: 12px; border: none; font-weight: bold; color: white; font-size: 16px; cursor: pointer; }
-        #btnGuardar { background-color: #007bff; }
+        button { display: block; width: 90%; margin: 12px auto; padding: 18px; border-radius: 12px; border: none; font-weight: bold; color: white; font-size: 16px; cursor: pointer; transition: opacity 0.2s; }
+        button:active { opacity: 0.7; }
+        #btnGuardar { background-color: var(--primary); }
         #btnBorrar { background-color: #dc3545; }
         #btnAmpliar { background-color: #ff9800; }
         #btnFinAzul { background-color: #6c757d; }
         #btnNavegar { background-color: #28a745; }
         
-        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal-content { background: var(--card); padding: 20px; border-radius: 15px; width: 80%; }
-        #btnSi, #btnNo, #btnCancelar { width: 100%; margin: 10px 0; }
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 15px; width: 80%; max-width: 300px; }
+        .modal-content button { width: 100%; margin: 10px 0; }
         #btnSi { background-color: #28a745; } 
-        #btnNo { background-color: #007bff; } 
+        #btnNo { background-color: var(--primary); } 
         #btnCancelar { background-color: #dc3545; }
-        #resultado { margin-top: 20px; padding: 15px; background: var(--card); border-radius: 10px; }
+        #resultado { margin-top: 20px; padding: 15px; background: var(--card); border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -59,7 +60,7 @@
                 let info = `<p><strong>Ubicación:</strong> ${data.nota}</p>`;
                 if (data.finZonaAzul) {
                     const faltan = Math.round((new Date(data.finZonaAzul).getTime() - new Date().getTime()) / 60000);
-                    info += faltan > 0 ? `<p><strong>Zona Azul:</strong> Quedan ${faltan} min</p>` : `<p style="color:red;">¡Tiempo agotado!</p>`;
+                    info += faltan > 0 ? `<p><strong>Zona Azul:</strong> Quedan ${faltan} min</p>` : `<p style="color:red;"><strong>¡Tiempo agotado!</strong></p>`;
                 } else {
                     info += `<p><em>Zona azul no activada</em></p>`;
                 }
@@ -71,7 +72,6 @@
             }
         }
 
-        // Flujo: Pregunta minutos -> Pregunta Ubicación
         function ejecutarGuardado(esInterior) {
             document.getElementById('modal').style.display = 'none';
             
@@ -86,11 +86,11 @@
                     lat: pos.coords.latitude, 
                     lon: pos.coords.longitude,
                     nota: nota,
-                    finZonaAzul: parseInt(min) > 0 ? new Date(new Date().getTime() + parseInt(min)*60000) : null
+                    finZonaAzul: parseInt(min) > 0 ? new Date(new Date().getTime() + parseInt(min)*60000).toISOString() : null
                 };
                 localStorage.setItem('miCoche', JSON.stringify(datos));
                 actualizarPantalla();
-            });
+            }, (err) => alert("Error obteniendo ubicación: " + err.message));
         }
 
         document.getElementById('btnGuardar').onclick = () => document.getElementById('modal').style.display = 'flex';
@@ -100,14 +100,14 @@
 
         document.getElementById('btnNavegar').onclick = () => {
             const d = JSON.parse(localStorage.getItem('miCoche'));
-            // URL estándar Google Maps
-            window.location.href = `https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}`;
+            // URL corregida para abrir Google Maps
+            window.open(`https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}`, '_blank');
         };
 
         document.getElementById('btnAmpliar').onclick = () => {
             const d = JSON.parse(localStorage.getItem('miCoche'));
             const baseTime = d.finZonaAzul ? new Date(d.finZonaAzul).getTime() : new Date().getTime();
-            d.finZonaAzul = new Date(baseTime + 15 * 60000);
+            d.finZonaAzul = new Date(baseTime + 15 * 60000).toISOString();
             localStorage.setItem('miCoche', JSON.stringify(d));
             actualizarPantalla();
         };
@@ -126,17 +126,9 @@
             }
         };
 
-        // Registro del Service Worker y Permiso de Notificaciones
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => {
-                        console.log('SW registrado');
-                        if (Notification.permission !== 'granted') {
-                            Notification.requestPermission();
-                        }
-                    })
-                    .catch(err => console.log('Error:', err));
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Error:', err));
             });
         }
 
