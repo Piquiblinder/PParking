@@ -3,17 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Aparcamiento</title>
+    <title>Asistente Parking</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; }
+        button { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <h1>Asistente de Aparcamiento</h1>
+    <h1>Mi Coche</h1>
     <button id="btnGuardar">Guardar Ubicación</button>
-    <div id="resultado"></div>
+    <button id="btnBorrar" style="background-color: #ffcccc;">Borrar Todo</button>
+    <div id="resultado" style="margin-top: 20px;"></div>
 
     <script>
+        function actualizarPantalla() {
+            const data = JSON.parse(localStorage.getItem('miCoche'));
+            const res = document.getElementById('resultado');
+            if (data) {
+                res.innerHTML = `<h3>Ubicación guardada:</h3><p>${data.nota || 'Coordenadas GPS guardadas'}</p>`;
+            } else {
+                res.innerHTML = '<p>No hay aparcamiento guardado.</p>';
+            }
+        }
+
         document.getElementById('btnGuardar').addEventListener('click', () => {
-            alert("¡Funciona! Tu app está viva.");
+            const esInterior = confirm("¿Estás en un parking interior?");
+            let nota = "";
+            if (esInterior) {
+                nota = prompt("Introduce planta y plaza:");
+            }
+            
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const datos = {
+                    lat: pos.coords.latitude,
+                    lon: pos.coords.longitude,
+                    nota: nota
+                };
+                localStorage.setItem('miCoche', JSON.stringify(datos));
+                actualizarPantalla();
+                alert("¡Guardado!");
+            });
         });
+
+        document.getElementById('btnBorrar').addEventListener('click', () => {
+            localStorage.removeItem('miCoche');
+            actualizarPantalla();
+            alert("Aparcamiento borrado.");
+        });
+
+        actualizarPantalla();
     </script>
 </body>
 </html>
