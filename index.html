@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistente Parking</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
@@ -69,7 +70,7 @@
                     actualizarPantalla();
                     alert("¡Ubicación guardada!");
                 }, (error) => {
-                    alert("Error al obtener ubicación: " + error.message);
+                    alert("Error: Para usar esta app, debes permitir el acceso a tu ubicación en los ajustes de tu navegador.");
                 });
             } else {
                 alert("Tu navegador no soporta geolocalización.");
