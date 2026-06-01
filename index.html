@@ -75,24 +75,24 @@
         }
 
         function programarAviso(minutos) {
-            // Limpiamos avisos previos si existen
-            if (timerNotificacion) clearTimeout(timerNotificacion);
-
-            if (minutos > 5) {
-                const tiempoParaAviso = (minutos - 5) * 60000;
-                
-                if (Notification.permission !== 'granted') Notification.requestPermission();
-
-                timerNotificacion = setTimeout(() => {
-                    if (Notification.permission === 'granted') {
-                        new Notification("PParking", {
-                            body: "Tu zona azul termina en 5 minutos. ¡Muévete!",
-                            icon: 'https://cdn-icons-png.flaticon.com/512/3203/3203926.png'
-                        });
-                    }
-                }, tiempoParaAviso);
-            }
+    if (minutos > 5) {
+        const tiempoParaAviso = (minutos - 5) * 60000;
+        
+        // Pedir permiso primero
+        if (Notification.permission !== 'granted') {
+            Notification.requestPermission();
         }
+
+        // Enviamos la orden al Service Worker
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'PROGRAMAR_AVISO',
+                delay: tiempoParaAviso
+            });
+        }
+    }
+        }
+        
 
         function ejecutarGuardado(esInterior) {
             document.getElementById('modal').style.display = 'none';
