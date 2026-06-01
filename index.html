@@ -6,19 +6,28 @@
     <title>Asistente Parking</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background-color: #f4f4f9; }
-        button { display: block; width: 90%; margin: 15px auto; padding: 20px; font-size: 18px; border-radius: 12px; border: none; font-weight: bold; }
-        #btnGuardar { background-color: #007bff; color: white; }
-        #btnBorrar { background-color: #dc3545; color: white; }
-        /* Esta clase oculta botones */
-        .oculto { display: none !important; }
-        #resultado { margin-top: 20px; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            padding: 20px; text-align: center; background-color: #f4f4f9; 
+        }
+        button { 
+            display: block; width: 90%; margin: 15px auto; padding: 20px; 
+            font-size: 18px; border-radius: 12px; border: none; font-weight: bold; color: white;
+        }
+        #btnGuardar { background-color: #007bff; }
+        #btnBorrar { background-color: #dc3545; }
+        #btnNavegar { background-color: #28a745; }
+        #resultado { 
+            margin-top: 20px; padding: 15px; background: white; 
+            border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+        }
     </style>
 </head>
 <body>
     <h1>Mi Coche</h1>
     <button id="btnGuardar">Guardar Ubicación</button>
-    <button id="btnBorrar" class="oculto">Borrar Aparcamiento</button>
+    <button id="btnNavegar" style="display: none;">¿Cómo llegar al coche?</button>
+    <button id="btnBorrar" style="display: none;">Borrar Aparcamiento</button>
     <div id="resultado"></div>
 
     <script>
@@ -26,17 +35,24 @@
             const data = JSON.parse(localStorage.getItem('miCoche'));
             const btnGuardar = document.getElementById('btnGuardar');
             const btnBorrar = document.getElementById('btnBorrar');
+            const btnNavegar = document.getElementById('btnNavegar');
             const res = document.getElementById('resultado');
 
             if (data) {
-                // Hay datos: ocultamos guardar, mostramos borrar
-                btnGuardar.classList.add('oculto');
-                btnBorrar.classList.remove('oculto');
+                btnGuardar.style.display = 'none';
+                btnBorrar.style.display = 'block';
+                btnNavegar.style.display = 'block';
+                
+                // Configurar el botón de navegación
+                btnNavegar.onclick = () => {
+                    window.location.href = `https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lon}`;
+                };
+
                 res.innerHTML = `<h3>Ubicación guardada:</h3><p>${data.nota || 'Coordenadas GPS guardadas'}</p>`;
             } else {
-                // No hay datos: mostramos guardar, ocultamos borrar
-                btnGuardar.classList.remove('oculto');
-                btnBorrar.classList.add('oculto');
+                btnGuardar.style.display = 'block';
+                btnBorrar.style.display = 'none';
+                btnNavegar.style.display = 'none';
                 res.innerHTML = '<p>No hay aparcamiento guardado.</p>';
             }
         }
@@ -52,8 +68,8 @@
                 const datos = { lat: pos.coords.latitude, lon: pos.coords.longitude, nota: nota };
                 localStorage.setItem('miCoche', JSON.stringify(datos));
                 actualizarPantalla();
-                alert("¡Guardado!");
-            }, (error) => { alert("Error de ubicación: " + error.message); });
+                alert("¡Ubicación guardada!");
+            }, (error) => { alert("Error: Asegúrate de tener la ubicación activada."); });
         });
 
         document.getElementById('btnBorrar').addEventListener('click', () => {
