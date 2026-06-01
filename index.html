@@ -5,15 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistente Parking</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; }
-        button { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            padding: 20px; 
+            text-align: center; 
+            background-color: #f4f4f9;
+        }
+        h1 { color: #333; }
+        button { 
+            display: block; 
+            width: 90%; 
+            margin: 15px auto; 
+            padding: 20px; 
+            font-size: 18px; 
+            border-radius: 12px; 
+            border: none; 
+            background-color: #007bff; 
+            color: white; 
+            font-weight: bold;
+        }
+        #btnBorrar { background-color: #dc3545; }
+        #resultado { 
+            margin-top: 20px; 
+            padding: 15px; 
+            background: white; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+        }
     </style>
 </head>
 <body>
     <h1>Mi Coche</h1>
     <button id="btnGuardar">Guardar Ubicación</button>
-    <button id="btnBorrar" style="background-color: #ffcccc;">Borrar Todo</button>
-    <div id="resultado" style="margin-top: 20px;"></div>
+    <button id="btnBorrar">Borrar Aparcamiento</button>
+    <div id="resultado"></div>
 
     <script>
         function actualizarPantalla() {
@@ -33,22 +58,29 @@
                 nota = prompt("Introduce planta y plaza (Ejemplo: Planta -2, Plaza B14):");
             }
             
-            navigator.geolocation.getCurrentPosition((pos) => {
-                const datos = {
-                    lat: pos.coords.latitude,
-                    lon: pos.coords.longitude,
-                    nota: nota
-                };
-                localStorage.setItem('miCoche', JSON.stringify(datos));
-                actualizarPantalla();
-                alert("¡Guardado!");
-            });
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const datos = {
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        nota: nota
+                    };
+                    localStorage.setItem('miCoche', JSON.stringify(datos));
+                    actualizarPantalla();
+                    alert("¡Ubicación guardada!");
+                }, (error) => {
+                    alert("Error al obtener ubicación: " + error.message);
+                });
+            } else {
+                alert("Tu navegador no soporta geolocalización.");
+            }
         });
 
         document.getElementById('btnBorrar').addEventListener('click', () => {
-            localStorage.removeItem('miCoche');
-            actualizarPantalla();
-            alert("Aparcamiento borrado.");
+            if (confirm("¿Seguro que quieres borrar el aparcamiento?")) {
+                localStorage.removeItem('miCoche');
+                actualizarPantalla();
+            }
         });
 
         actualizarPantalla();
