@@ -101,7 +101,7 @@
         document.getElementById('btnNavegar').onclick = () => {
             const d = JSON.parse(localStorage.getItem('miCoche'));
             // URL estándar Google Maps
-            window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lon}`;
+            window.location.href = `https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}`;
         };
 
         document.getElementById('btnAmpliar').onclick = () => {
