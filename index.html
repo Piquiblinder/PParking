@@ -71,18 +71,15 @@
             }
         }
 
-        document.getElementById('btnGuardar').onclick = () => document.getElementById('modal').style.display = 'flex';
-        document.getElementById('btnCancelar').onclick = () => document.getElementById('modal').style.display = 'none';
-        
-        // Flujo corregido: Preguntar primero por tiempo, luego ubicación
-        function iniciarGuardado(esInterior) {
+        // Flujo corregido: Preguntar primero tiempo, luego nota
+        function ejecutarGuardado(esInterior) {
             document.getElementById('modal').style.display = 'none';
             
-            let nota = esInterior ? prompt("Introduce planta y plaza:") : "Aparcado en exterior";
-            if (nota === null) return; // Cancelar si el usuario cierra el prompt
+            const min = prompt("Minutos de zona azul (0 si no aplica):");
+            if (min === null) return; 
 
-            const min = prompt("Minutos de zona azul (escribe 0 si no lo activas ahora):");
-            if (min === null) return;
+            let nota = esInterior ? prompt("Introduce planta y plaza:") : "Aparcado en exterior";
+            if (nota === null) return;
 
             navigator.geolocation.getCurrentPosition((pos) => {
                 const datos = {
@@ -96,17 +93,19 @@
             });
         }
 
-        document.getElementById('btnSi').onclick = () => iniciarGuardado(true);
-        document.getElementById('btnNo').onclick = () => iniciarGuardado(false);
+        document.getElementById('btnGuardar').onclick = () => document.getElementById('modal').style.display = 'flex';
+        document.getElementById('btnCancelar').onclick = () => document.getElementById('modal').style.display = 'none';
+        document.getElementById('btnSi').onclick = () => ejecutarGuardado(true);
+        document.getElementById('btnNo').onclick = () => ejecutarGuardado(false);
 
         document.getElementById('btnNavegar').onclick = () => {
             const d = JSON.parse(localStorage.getItem('miCoche'));
-            window.location.href = `https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}`;
+            // URL corregida para Google Maps
+            window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lon}`;
         };
 
         document.getElementById('btnAmpliar').onclick = () => {
             const d = JSON.parse(localStorage.getItem('miCoche'));
-            // Lógica flexible: si es null, toma la hora actual como base. Si existe, suma sobre el tiempo previo.
             const baseTime = d.finZonaAzul ? new Date(d.finZonaAzul).getTime() : new Date().getTime();
             d.finZonaAzul = new Date(baseTime + 15 * 60000);
             localStorage.setItem('miCoche', JSON.stringify(d));
@@ -126,6 +125,15 @@
                 actualizarPantalla();
             }
         };
+
+        // Registro del Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registrado'))
+                    .catch(err => console.log('Error:', err));
+            });
+        }
 
         setInterval(actualizarPantalla, 60000);
         actualizarPantalla();
